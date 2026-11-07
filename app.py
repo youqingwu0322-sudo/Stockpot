@@ -2,7 +2,7 @@ import os
 from flask import Flask, request
 import requests
 import yfinance as yf
-
+import gunicorn
 app = Flask(__name__)
 
 def send_telegram_message(text, chat_id=None):
