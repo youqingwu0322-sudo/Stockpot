@@ -3,7 +3,7 @@ from flask import Flask, request
 import requests
 import yfinance as yf
 
-app = Flask(__name__)
+app = gunicorn(__name__)
 
 def send_telegram_message(text, chat_id=None):
     """發送訊息到 Telegram (已移除會卡住訊息的 parse_mode)"""
