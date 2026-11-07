@@ -3,24 +3,22 @@ from flask import Flask, request
 import requests
 import yfinance as yf
 
-app = flask(__name__)
+app = Flask(__name__)
 
 def send_telegram_message(text, chat_id=None):
-    """發送訊息到 Telegram (已移除會卡住訊息的 parse_mode)"""
+    """發送訊息到 Telegram"""
     token = os.environ.get("TELEGRAM_BOT_TOKEN", "").strip()
     target_chat_id = chat_id or os.environ.get("TELEGRAM_CHAT_ID", "").strip()
-    
+
     if not token or not target_chat_id:
-        print(f"缺少 Token 或 Chat ID! Token長度: {len(token)}, Chat_ID: {target_chat_id}")
         return
-        
+
     url = f"https://api.telegram.org/bot{token}/sendMessage"
     payload = {
         "chat_id": target_chat_id,
         "text": text
     }
-    res = requests.post(url, json=payload)
-    print("Telegram 發送結果:", res.status_code, res.text)
+    requests.post(url, json=payload)
 
 @app.route("/", methods=["GET"])
 def home():
@@ -30,8 +28,7 @@ def home():
 def telegram_webhook():
     """接收你在 Telegram 傳送的指令或代號"""
     data = request.json or {}
-    print("收到 Telegram 訊息:", data)
-    
+
     if "message" in data:
         chat_id = data["message"]["chat"]["id"]
         text = data["message"].get("text", "").strip()
@@ -53,7 +50,6 @@ def telegram_webhook():
             stock_symbol = text.upper()
             try:
                 stock = yf.Ticker(stock_symbol)
-                # 改用 5d 確保週末或休市也能抓到最近兩個交易日的收盤價
                 hist = stock.history(period="5d")
 
                 if not hist.empty:
@@ -78,4 +74,9 @@ def telegram_webhook():
             except Exception as e:
                 reply = f"⚠️ 查詢發生錯誤：{str(e)}"
 
-        send_telegram_message(reply, chat
+        send_telegram_message(reply, chat_id)
+
+    return "OK", 200
+
+if __name__ == "__main__":
+    app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 5000)))
